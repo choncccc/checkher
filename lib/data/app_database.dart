@@ -8,7 +8,7 @@ class AppDatabase {
 
   final Database db;
 
-  static const _version = 2;
+  static const _version = 3;
 
   static const defaultReminders = [
     'Morning Medication',
@@ -76,10 +76,12 @@ class AppDatabase {
       )
     ''');
     await _createAssessments(db);
+    await _createPeriodDays(db);
   }
 
   static Future<void> _upgrade(Database db, int from, int to) async {
     if (from < 2) await _createAssessments(db);
+    if (from < 3) await _createPeriodDays(db);
   }
 
   /// PMOS Risk Assessment results; the latest row is the user's result.
@@ -90,6 +92,17 @@ class AppDatabase {
           score REAL NOT NULL,
           level TEXT NOT NULL,
           taken_at TEXT NOT NULL
+        )
+      ''');
+
+  /// Days logged on the Menstrual Cycle Calendar, with how heavy the
+  /// bleeding was.
+  static Future<void> _createPeriodDays(DatabaseExecutor db) => db.execute('''
+        CREATE TABLE period_days (
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          day TEXT NOT NULL,
+          flow TEXT NOT NULL,
+          PRIMARY KEY (user_id, day)
         )
       ''');
 

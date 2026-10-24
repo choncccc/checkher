@@ -8,6 +8,7 @@ import '../data/services.dart';
 import '../models/user.dart';
 import '../theme.dart';
 import '../widgets/logo.dart';
+import 'calendar/cycle_calendar_screen.dart';
 
 /// Page 4: Home dashboard — greeting, cycle day card and today's reminders.
 class HomeScreen extends StatefulWidget {
@@ -84,20 +85,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await _load();
   }
 
-  Future<void> _setPeriodStart() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: widget.user.lastPeriodStart ?? now,
-      firstDate: now.subtract(const Duration(days: 120)),
-      lastDate: now,
-      helpText: 'First day of your last period',
+  void _openCalendar() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CycleCalendarScreen(
+          user: widget.user,
+          onUserChanged: widget.onUserChanged,
+        ),
+      ),
     );
-    if (picked == null || !mounted) return;
-    final updated = await Services.of(
-      context,
-    ).auth.updateCycle(widget.user, lastPeriodStart: picked);
-    widget.onUserChanged(updated);
   }
 
   void _comingSoon(String feature) {
@@ -150,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             user: widget.user,
             today: _today,
             onLog: _comingSoon,
-            onViewCalendar: _setPeriodStart,
+            onViewCalendar: _openCalendar,
           ),
           const SizedBox(height: 22),
           Row(

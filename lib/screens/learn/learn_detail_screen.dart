@@ -67,7 +67,7 @@ class LearnDetailScreen extends StatelessWidget {
                         const SizedBox(height: 18),
                         const Divider(color: AppColors.aquaSoft),
                         const SizedBox(height: 40),
-                        // TODO: article content for this topic.
+                        // w
                         const Text(
                           'Content coming soon',
                           textAlign: TextAlign.center,

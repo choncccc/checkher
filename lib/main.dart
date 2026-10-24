@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'data/app_database.dart';
 import 'data/assessment_repository.dart';
 import 'data/auth_repository.dart';
+import 'data/period_repository.dart';
 import 'data/reminder_repository.dart';
 import 'data/services.dart';
 import 'screens/splash_screen.dart';
@@ -16,6 +17,7 @@ Future<void> main() async {
       auth: AuthRepository(db),
       reminders: ReminderRepository(db),
       assessments: AssessmentRepository(db),
+      periods: PeriodRepository(db),
       child: const CheckHerApp(),
     ),
   );

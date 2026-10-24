@@ -2,6 +2,7 @@ import 'package:checkher/content/assessment.dart';
 import 'package:checkher/data/app_database.dart';
 import 'package:checkher/data/assessment_repository.dart';
 import 'package:checkher/data/auth_repository.dart';
+import 'package:checkher/data/period_repository.dart';
 import 'package:checkher/data/reminder_repository.dart';
 import 'package:checkher/models/user.dart';
 import 'package:checkher/screens/home_screen.dart';
@@ -131,5 +132,53 @@ void main() {
     expect(await repo.latest(user.id), RiskLevel.low);
     await repo.save(user.id, List.filled(6, Answer.yes));
     expect(await repo.latest(user.id), RiskLevel.high);
+  });
+
+  test('logged bleeding days are stored per user with their flow', () async {
+    final user = await signUp();
+    final repo = PeriodRepository(db);
+    await repo.setFlow(user.id, DateTime(2026, 7, 6), BleedingFlow.light);
+    await repo.setFlow(user.id, DateTime(2026, 7, 7), BleedingFlow.light);
+    await repo.setFlow(user.id, DateTime(2026, 7, 7), BleedingFlow.heavy);
+    await repo.setFlow(user.id, DateTime(2026, 8, 1), BleedingFlow.moderate);
+    expect(await repo.forRange(user.id, DateTime(2026, 7), DateTime(2026, 7, 31)), {
+      DateTime(2026, 7, 6): BleedingFlow.light,
+      DateTime(2026, 7, 7): BleedingFlow.heavy,
+    });
+    await repo.setFlow(user.id, DateTime(2026, 7, 6), null);
+    expect(
+      (await repo.forRange(user.id, DateTime(2026), DateTime(2026, 12, 31))).keys,
+      [DateTime(2026, 7, 7), DateTime(2026, 8, 1)],
+    );
+    expect(BleedingFlow.heavy.next, BleedingFlow.light);
+  });
+
+  test('period start is the first day of the latest logged run', () async {
+    final user = await signUp();
+    final repo = PeriodRepository(db);
+    expect(await repo.latestPeriodStart(user.id), isNull);
+    for (final d in [6, 7, 8, 9, 10, 11, 12]) {
+      await repo.setFlow(user.id, DateTime(2026, 7, d), BleedingFlow.moderate);
+    }
+    expect(await repo.latestPeriodStart(user.id), DateTime(2026, 7, 6));
+    for (final d in [3, 4, 5]) {
+      await repo.setFlow(user.id, DateTime(2026, 8, d), BleedingFlow.light);
+    }
+    expect(await repo.latestPeriodStart(user.id), DateTime(2026, 8, 3));
+  });
+
+  test('clearing a range returns what was cleared', () async {
+    final user = await signUp();
+    final repo = PeriodRepository(db);
+    for (final d in [12, 14, 15, 20]) {
+      await repo.setFlow(user.id, DateTime(2026, 10, d), BleedingFlow.moderate);
+    }
+    final cleared =
+        await repo.clearRange(user.id, DateTime(2026, 10, 13), DateTime(2026, 10, 18));
+    expect(cleared.keys, [DateTime(2026, 10, 14), DateTime(2026, 10, 15)]);
+    expect(
+      (await repo.forRange(user.id, DateTime(2026, 10), DateTime(2026, 10, 31))).keys,
+      [DateTime(2026, 10, 12), DateTime(2026, 10, 20)],
+    );
   });
 }

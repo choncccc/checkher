@@ -38,6 +38,8 @@ dependencies:
   path: ^1.9.1
   crypto: ^3.0.7
   intl: ^0.20.3
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +67,7 @@ flutter:
   assets:
     - assets/
     - assets/nav_icons/
+    - assets/map/
 
   # Bundled so text renders the same offline. Licenses in assets/fonts/OFL-*.txt
   fonts:

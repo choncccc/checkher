@@ -9,6 +9,7 @@ import 'learn/learn_screen.dart';
 import 'me_screen.dart';
 import 'menu_drawer.dart';
 import 'placeholder_screen.dart';
+import 'services/nearby_services_screen.dart';
 
 /// Hosts the five bottom-nav tabs: Home, Care, Learn, Menu, Me.
 class MainShell extends StatefulWidget {
@@ -27,13 +28,15 @@ class _MainShellState extends State<MainShell> {
   int _lastTab = 0;
   bool _menuOpen = false;
   final _drawerHost = GlobalKey<ScaffoldState>();
-  // Care, Learn and Menu have their own navigators so their pages keep the
-  // bottom bar.
+  // Each tab except Me has its own navigator so its pages keep the bottom
+  // bar.
+  final _homeNav = GlobalKey<NavigatorState>();
   final _careNav = GlobalKey<NavigatorState>();
   final _learnNav = GlobalKey<NavigatorState>();
   final _menuNav = GlobalKey<NavigatorState>();
 
   GlobalKey<NavigatorState>? _navFor(int i) => switch (i) {
+    0 => _homeNav,
     1 => _careNav,
     2 => _learnNav,
     3 => _menuNav,
@@ -65,6 +68,7 @@ class _MainShellState extends State<MainShell> {
           MaterialPageRoute<void>(
             builder: (context) => switch (title) {
               'PMOS Risk Assessment' => AssessmentEntryScreen(userId: _user.id),
+              'Nearby Health Services' => const NearbyServicesScreen(),
               _ => Scaffold(
                 body: PlaceholderScreen(
                   title: title,
@@ -88,9 +92,12 @@ class _MainShellState extends State<MainShell> {
       onPopWithResult: (_) => key.currentState?.maybePop(),
       // While the menu is open, back closes it instead.
       enabled: _index == i && !_menuOpen,
+      // Page-based so a rebuilt root (e.g. Home after the user changes)
+      // replaces the old one; pushed pages stay on top of it.
       child: Navigator(
         key: key,
-        onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => root),
+        pages: [MaterialPage<void>(key: ValueKey(i), child: root)],
+        onDidRemovePage: (_) {},
       ),
     );
   }
@@ -98,7 +105,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final tabs = [
-      HomeScreen(user: _user, onUserChanged: _onUserChanged),
+      _tabNavigator(0, HomeScreen(user: _user, onUserChanged: _onUserChanged)),
       _tabNavigator(1, const CareScreen()),
       _tabNavigator(2, const LearnScreen()),
       _tabNavigator(3, const SizedBox.shrink()),

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'assessment_repository.dart';
 import 'auth_repository.dart';
+import 'period_repository.dart';
 import 'reminder_repository.dart';
 
 /// Makes the repositories available to every screen.
@@ -11,12 +12,14 @@ class Services extends InheritedWidget {
     required this.auth,
     required this.reminders,
     required this.assessments,
+    required this.periods,
     required super.child,
   });
 
   final AuthRepository auth;
   final ReminderRepository reminders;
   final AssessmentRepository assessments;
+  final PeriodRepository periods;
 
   static Services of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<Services>()!;
@@ -25,5 +28,6 @@ class Services extends InheritedWidget {
   bool updateShouldNotify(Services oldWidget) =>
       auth != oldWidget.auth ||
       reminders != oldWidget.reminders ||
-      assessments != oldWidget.assessments;
+      assessments != oldWidget.assessments ||
+      periods != oldWidget.periods;
 }

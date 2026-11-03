@@ -95,7 +95,6 @@ double averageScore(List<Answer> answers) {
   return answers.fold<double>(0, (sum, a) => sum + a.score) / answers.length;
 }
 
-/// TODO: Computation
 /// Scoring: Yes = 1, Unsure = 0.5, No = 0, averaged
 // - below 0.25 → Low
 // - 0.25 to under 0.5 → Mild

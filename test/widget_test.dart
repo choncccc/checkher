@@ -2,12 +2,26 @@ import 'package:checkher/content/assessment.dart';
 import 'package:checkher/data/app_database.dart';
 import 'package:checkher/data/assessment_repository.dart';
 import 'package:checkher/data/auth_repository.dart';
+import 'package:checkher/data/meal_repository.dart';
+import 'package:checkher/data/medication_alerts.dart';
+import 'package:checkher/data/medication_repository.dart';
 import 'package:checkher/data/period_repository.dart';
 import 'package:checkher/data/reminder_repository.dart';
 import 'package:checkher/models/user.dart';
 import 'package:checkher/screens/home_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+class _NoAlerts implements MedicationAlerts {
+  @override
+  Future<bool> requestPermission() async => true;
+
+  @override
+  Future<void> sync(List<Medication> medications) async {}
+
+  @override
+  Future<void> cancelAll() async {}
+}
 
 void main() {
   late AppDatabase db;
@@ -165,6 +179,82 @@ void main() {
       await repo.setFlow(user.id, DateTime(2026, 8, d), BleedingFlow.light);
     }
     expect(await repo.latestPeriodStart(user.id), DateTime(2026, 8, 3));
+  });
+
+  group('next dose', () {
+    Medication dose(int id, int hour, {bool enabled = true}) => Medication(
+      id: id,
+      name: 'Dose $id',
+      note: '',
+      minutes: hour * 60,
+      enabled: enabled,
+    );
+    final at10 = DateTime(2026, 8, 19, 10);
+
+    test('is the soonest enabled dose later today', () {
+      final next = nextDoses([dose(1, 8), dose(2, 12, enabled: false), dose(3, 20)], at10)!;
+      expect(next.doses.map((m) => m.id), [3]);
+      expect(next.tomorrow, isFalse);
+    });
+
+    test('groups doses due at the same time', () {
+      final next = nextDoses([dose(1, 20), dose(2, 20), dose(3, 21)], at10)!;
+      expect(next.doses.map((m) => m.id), [1, 2]);
+    });
+
+    test('rolls over to tomorrow once today has passed', () {
+      final next = nextDoses([dose(1, 7), dose(2, 8)], at10)!;
+      expect(next.doses.map((m) => m.id), [1]);
+      expect(next.tomorrow, isTrue);
+    });
+
+    test('a dose at the current minute has already gone off', () {
+      expect(nextDoses([dose(1, 10)], at10)!.tomorrow, isTrue);
+    });
+
+    test('is null when nothing is enabled', () {
+      expect(nextDoses([dose(1, 20, enabled: false)], at10), isNull);
+      expect(nextDoses([], at10), isNull);
+    });
+  });
+
+  test('medications are per user, sorted by time and editable', () async {
+    final user = await signUp();
+    final other = await signUp('someone');
+    final repo = MedicationRepository(db, _NoAlerts());
+    await repo.add(user.id, name: 'Evening', note: '', minutes: 20 * 60);
+    await repo.add(user.id, name: 'Morning', note: 'After Breakfast', minutes: 8 * 60);
+    await repo.add(other.id, name: 'Theirs', note: '', minutes: 9 * 60);
+    var meds = await repo.forUser(user.id);
+    expect(meds.map((m) => m.name), ['Morning', 'Evening']);
+
+    await repo.update(user.id, meds.last.id, name: 'Night', note: '', minutes: 7 * 60);
+    await repo.setEnabled(user.id, meds.first.id, false);
+    meds = await repo.forUser(user.id);
+    expect(meds.map((m) => m.name), ['Night', 'Morning']);
+    expect(meds.last.enabled, isFalse);
+
+    await repo.delete(user.id, meds.first.id);
+    expect((await repo.forUser(user.id)).map((m) => m.name), ['Morning']);
+    expect((await repo.forUser(other.id)).map((m) => m.name), ['Theirs']);
+  });
+
+  test('meal counters are per day and the calorie goal carries over', () async {
+    final user = await signUp();
+    final repo = MealRepository(db);
+    final today = DateTime(2026, 8, 19);
+    final tomorrow = DateTime(2026, 8, 20);
+    expect((await repo.forDay(user.id, today)).kcalGoal, 1600);
+
+    await repo.setWater(user.id, today, 6);
+    await repo.setMeals(user.id, today, 2);
+    await repo.setWater(user.id, today, 7); // must not reset the meals
+    await repo.setKcalGoal(user.id, 1800);
+
+    final saved = await repo.forDay(user.id, today);
+    expect((saved.water, saved.meals, saved.kcalGoal), (7, 2, 1800));
+    final next = await repo.forDay(user.id, tomorrow);
+    expect((next.water, next.meals, next.kcalGoal), (0, 0, 1800));
   });
 
   test('clearing a range returns what was cleared', () async {

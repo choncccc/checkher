@@ -8,7 +8,7 @@ class AppDatabase {
 
   final Database db;
 
-  static const _version = 3;
+  static const _version = 4;
 
   static const defaultReminders = [
     'Morning Medication',
@@ -77,11 +77,42 @@ class AppDatabase {
     ''');
     await _createAssessments(db);
     await _createPeriodDays(db);
+    await _createMedicationsAndMeals(db);
   }
 
   static Future<void> _upgrade(Database db, int from, int to) async {
     if (from < 2) await _createAssessments(db);
     if (from < 3) await _createPeriodDays(db);
+    if (from < 4) await _createMedicationsAndMeals(db);
+  }
+
+  /// Supplement Reminder schedule and the Meal Guide's daily counters.
+  static Future<void> _createMedicationsAndMeals(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE medications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        note TEXT NOT NULL,
+        minutes INTEGER NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE meal_days (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        day TEXT NOT NULL,
+        water INTEGER NOT NULL DEFAULT 0,
+        meals INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (user_id, day)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE meal_goals (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        kcal INTEGER NOT NULL
+      )
+    ''');
   }
 
   /// PMOS Risk Assessment results; the latest row is the user's result.

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'data/app_database.dart';
 import 'data/assessment_repository.dart';
 import 'data/auth_repository.dart';
+import 'data/meal_repository.dart';
+import 'data/medication_alerts.dart';
+import 'data/medication_repository.dart';
 import 'data/period_repository.dart';
 import 'data/reminder_repository.dart';
 import 'data/services.dart';
@@ -18,6 +21,8 @@ Future<void> main() async {
       reminders: ReminderRepository(db),
       assessments: AssessmentRepository(db),
       periods: PeriodRepository(db),
+      medications: MedicationRepository(db, DeviceMedicationAlerts()),
+      meals: MealRepository(db),
       child: const CheckHerApp(),
     ),
   );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/services.dart';
 import '../models/user.dart';
 import '../theme.dart';
 import 'assessment/assessment_entry_screen.dart';
@@ -7,9 +8,11 @@ import 'care/care_screen.dart';
 import 'home_screen.dart';
 import 'learn/learn_screen.dart';
 import 'me_screen.dart';
+import 'meals/meal_guide_screen.dart';
 import 'menu_drawer.dart';
 import 'placeholder_screen.dart';
 import 'services/nearby_services_screen.dart';
+import 'supplements/supplement_reminder_screen.dart';
 
 /// Hosts the five bottom-nav tabs: Home, Care, Learn, Menu, Me.
 class MainShell extends StatefulWidget {
@@ -34,6 +37,17 @@ class _MainShellState extends State<MainShell> {
   final _careNav = GlobalKey<NavigatorState>();
   final _learnNav = GlobalKey<NavigatorState>();
   final _menuNav = GlobalKey<NavigatorState>();
+  late final _menuObserver = _RouteLeftObserver(_onMenuRouteLeft);
+  bool _alertsSynced = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_alertsSynced) return;
+    _alertsSynced = true;
+    // Picks up a time zone change, or the user who just logged in.
+    Services.of(context).medications.syncAlerts(_user.id);
+  }
 
   GlobalKey<NavigatorState>? _navFor(int i) => switch (i) {
     0 => _homeNav,
@@ -62,28 +76,36 @@ class _MainShellState extends State<MainShell> {
     _drawerHost.currentState!.closeDrawer();
     if (_index != 3) _lastTab = _index;
     setState(() => _index = 3);
-    final nav = _menuNav.currentState!..popUntil((r) => r.isFirst);
-    nav
-        .push(
-          MaterialPageRoute<void>(
-            builder: (context) => switch (title) {
-              'PMOS Risk Assessment' => AssessmentEntryScreen(userId: _user.id),
-              'Nearby Health Services' => const NearbyServicesScreen(),
-              _ => Scaffold(
-                body: PlaceholderScreen(
-                  title: title,
-                  onBack: () => Navigator.of(context).pop(),
-                ),
+    _menuNav.currentState!
+      ..popUntil((r) => r.isFirst)
+      ..push(
+        MaterialPageRoute<void>(
+          builder: (context) => switch (title) {
+            'PMOS Risk Assessment' => AssessmentEntryScreen(userId: _user.id),
+            'Nearby Health Services' => const NearbyServicesScreen(),
+            'Supplement Reminder' => SupplementReminderScreen(userId: _user.id),
+            'Meal Guide' => MealGuideScreen(userId: _user.id),
+            _ => Scaffold(
+              body: PlaceholderScreen(
+                title: title,
+                onBack: () => Navigator.of(context).pop(),
               ),
-            },
-          ),
-        )
-        .then((_) {
-          // Leaving the last Menu page returns to the tab it was opened from.
-          if (mounted && _index == 3 && !nav.canPop()) {
-            setState(() => _index = _lastTab);
-          }
-        });
+            ),
+          },
+        ),
+      );
+  }
+
+  /// Leaving the last Menu page returns to the tab it was opened from, however
+  /// that page was reached. Checked after the frame because opening a Menu page
+  /// pops the previous one and pushes the new one in the same step.
+  void _onMenuRouteLeft() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nav = _menuNav.currentState;
+      if (mounted && _index == 3 && nav != null && !nav.canPop()) {
+        setState(() => _index = _lastTab);
+      }
+    });
   }
 
   Widget _tabNavigator(int i, Widget root) {
@@ -96,6 +118,7 @@ class _MainShellState extends State<MainShell> {
       // replaces the old one; pushed pages stay on top of it.
       child: Navigator(
         key: key,
+        observers: i == 3 ? [_menuObserver] : const [],
         pages: [MaterialPage<void>(key: ValueKey(i), child: root)],
         onDidRemovePage: (_) {},
       ),
@@ -137,6 +160,22 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
+}
+
+/// Reports routes leaving a navigator, whether popped or replaced by a
+/// `pushAndRemoveUntil`.
+class _RouteLeftObserver extends NavigatorObserver {
+  _RouteLeftObserver(this.onRouteLeft);
+
+  final VoidCallback onRouteLeft;
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      onRouteLeft();
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      onRouteLeft();
 }
 
 class _BottomBar extends StatelessWidget {

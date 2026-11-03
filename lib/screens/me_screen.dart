@@ -75,7 +75,9 @@ class MeScreen extends StatelessWidget {
   }
 
   Future<void> _logout(BuildContext context) async {
-    await Services.of(context).auth.logout();
+    final services = Services.of(context);
+    await services.auth.logout();
+    await services.medications.cancelAlerts();
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),

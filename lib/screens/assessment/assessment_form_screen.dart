@@ -43,7 +43,6 @@ class _AssessmentFormScreenState extends State<AssessmentFormScreen> {
       body: Column(
         children: [
           const LogoHeader(),
-          const SizedBox(height: 12),
           AssessmentTitle(
             title: 'PMOS RISK ASSESSMENT',
             subtitle: 'Self - Screening Questionnaire',

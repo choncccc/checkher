@@ -38,7 +38,7 @@ class _AssessmentEntryScreenState extends State<AssessmentEntryScreen> {
         final level = snap.data;
         return level == null
             ? AssessmentFormScreen(userId: widget.userId)
-            : ResultScreen(level: level);
+            : ResultScreen(level: level, userId: widget.userId);
       },
     );
   }

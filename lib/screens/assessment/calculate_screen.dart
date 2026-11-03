@@ -23,7 +23,9 @@ class CalculateScreen extends StatelessWidget {
     final level = await Services.of(context).assessments.save(userId, answers);
     // Drop the questionnaire too: once taken, the Menu shows the result.
     nav.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => ResultScreen(level: level)),
+      MaterialPageRoute(
+        builder: (_) => ResultScreen(level: level, userId: userId),
+      ),
       (r) => r.isFirst,
     );
   }
@@ -34,7 +36,6 @@ class CalculateScreen extends StatelessWidget {
       body: Column(
         children: [
           const LogoHeader(),
-          const SizedBox(height: 12),
           AssessmentTitle(
             title: 'PMOS RISK\nASSESSMENT',
             subtitle: 'EMERGENCY SIGNS',

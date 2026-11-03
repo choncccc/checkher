@@ -1,0 +1,130 @@
+CheckHER - Changes (November 3, 2026)
+Bug fixes, Supplement Reminder (prototype page 20), Meal Guide (page 21)
+
+
+BUG FIXES
+---------
+1. Result screen link
+   "Nearby Health Services" opened a "Coming soon" page. It now opens the real
+   Nearby Health Services screen.
+
+2. Retake assessment
+   Once taken, the assessment could only show the saved result. The result
+   screen opened from the Menu now has a "Retake Assessment" button. Backing out
+   of a retake returns to the saved result.
+
+3. Blank page after the assessment
+   Pressing back after finishing the assessment from the Menu left a blank page.
+   Leaving the last Menu page now always returns to the tab it was opened from.
+
+4. Assessment back button
+   Only about the bottom 12px of the button responded to taps because it was
+   drawn partly outside its parent. It now sits just under the logo header and
+   the whole button works. The title below it moved slightly as a result.
+
+5. Removed the outdated "TODO: Computation" comment in lib/content/assessment.dart.
+
+
+SUPPLEMENT REMINDER (Menu > Supplement Reminder)
+------------------------------------------------
+- Next Reminder card, moves on as doses pass and shows "Tomorrow" when today's
+  have passed. Doses due at the same time show as "+N more".
+- Today's Schedule with an on/off switch for each medication.
+- Add, edit and delete medications (name and dose, optional instructions, time).
+  Delete asks for confirmation.
+- Starts empty; the prototype's sample medicines are not preloaded.
+- Daily phone notifications that work with the app in the background:
+  - Permission is requested when a reminder is first saved or switched on.
+  - If permission is denied, the app says reminders won't alert.
+  - Medicine details are hidden on the lock screen.
+  - Reminders are cancelled on logout and set up again on the next app start.
+  - New one-colour notification icon.
+- Known limit: notifications can run a few minutes late (about 3 and 5 minutes
+  in testing) because exact timing needs a restricted Android permission.
+
+
+MEAL GUIDE (Menu > Meal Guide)
+------------------------------
+- Water, meal and daily calorie counters with arrows. Water and meals are saved
+  per day; the calorie goal carries over to the next day.
+- Five topic shortcuts and six recommended meal options with nutrition tags.
+- PMOS friendly foods: 78 foods from prototype/font ng layout.pdf, with search
+  and category filters (Fruits 21, Vegetables 18, Dairy 11, Protein 14,
+  Oils & Fats 14). Each shows serving, nutrition per 100 g, key nutrients and
+  why it helps.
+
+Changes made to the food text from the PDF:
+- Star Fruit: "auto-hide for kidney disease" note became a visible warning,
+  because the app does not store kidney health information.
+- Pomelo: "flag CYP3A4 interaction in app profile" note became a visible warning.
+- Virgin Coconut Oil: "specify portioning in database" reworded for users.
+- "PCOS" changed to "PMOS" to match the rest of the app.
+- Added the "Protein" heading, which is missing in the PDF.
+- Label "Implementation" shown as "Why it helps".
+- "Potas" and "Mag" expanded to Potassium and Magnesium.
+- Small fixes: "a essential" to "an essential", "glp-1" to "GLP-1", and missing
+  full stops.
+- Added a "not medical advice" note at the end of the food list.
+
+
+STILL NEEDED
+------------
+- Content for low GI food, Food to avoid, Hydration Guide, Meal Planner and Meal
+  Options 1-6. These still show "Content coming soon".
+- Health professional review of the food text. Some claims are strong and the
+  wording is technical.
+- Water goal: the Meal Guide uses 9 glasses, but prototype pages 46-47 say 8.
+
+
+TECHNICAL
+---------
+Packages added: flutter_local_notifications, timezone, flutter_timezone
+
+Database: version 3 to 4, adding the tables medications, meal_days and meal_goals.
+Upgrade tested on the emulator with an existing account.
+
+Android:
+- android/app/build.gradle.kts: core library desugaring
+- android/app/src/main/AndroidManifest.xml: notification permissions and receivers
+- android/app/src/main/res/drawable/ic_notification.xml: notification icon
+
+New files:
+- lib/content/foods.dart
+- lib/content/meal_guide.dart
+- lib/data/meal_repository.dart
+- lib/data/medication_alerts.dart
+- lib/data/medication_repository.dart
+- lib/screens/meals/food_guide_screen.dart
+- lib/screens/meals/meal_detail_screen.dart
+- lib/screens/meals/meal_guide_screen.dart
+- lib/screens/supplements/supplement_reminder_screen.dart
+- lib/widgets/menu_page_header.dart
+- test/menu_navigation_test.dart
+- prototype/font ng layout.pdf (content source)
+
+Changed files:
+- lib/content/assessment.dart
+- lib/data/app_database.dart
+- lib/data/services.dart
+- lib/main.dart
+- lib/screens/assessment/assessment_entry_screen.dart
+- lib/screens/assessment/assessment_form_screen.dart
+- lib/screens/assessment/assessment_widgets.dart
+- lib/screens/assessment/calculate_screen.dart
+- lib/screens/assessment/result_screen.dart
+- lib/screens/main_shell.dart
+- lib/screens/me_screen.dart
+- lib/theme.dart
+- pubspec.yaml, pubspec.lock
+- test/widget_test.dart
+
+
+TESTING
+-------
+- flutter test: all 31 tests pass
+- flutter analyze: no issues
+- Android 16 emulator: database upgrade, Supplement Reminder screens, permission
+  prompt, notification delivery and icon, editing and deleting, Meal Guide
+  counters and saving, food guide, assessment back button
+- Automated tests only: retake and the result screen link
+- Not tested: iOS, and reminders coming back after a phone restart

@@ -10,6 +10,8 @@ class AppColors {
   static const ink = Color(0xFF111111);
   static const inkSoft = Color(0xFF555555);
   static const periodRed = Color(0xFFC0645A);
+  static const panel = Color(0xFF3FD9C4); // softer teal cards and outlines
+  static const paper = Color(0xFFFCFBF9); // Menu feature page background
 }
 
 /// Soft teal-tinted shadow used on cards and tiles.

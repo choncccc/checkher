@@ -46,10 +46,9 @@ class AssessmentTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Stack(
-        clipBehavior: Clip.none,
         children: [
           Padding(
-            padding: EdgeInsets.only(top: onBack == null ? 0 : 14),
+            padding: EdgeInsets.only(top: onBack == null ? 12 : 30),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -71,10 +70,11 @@ class AssessmentTitle extends StatelessWidget {
               ],
             ),
           ),
-          // Sits on the bottom edge of the logo header, as in the layout.
+          // Just under the logo header, as in the layout. It must stay inside
+          // this Stack: the part of a child outside its parent ignores taps.
           if (onBack != null)
             Positioned(
-              top: -26,
+              top: 4,
               left: 0,
               child: RoundBackButton(onPressed: onBack!),
             ),

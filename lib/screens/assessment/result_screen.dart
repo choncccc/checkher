@@ -3,14 +3,23 @@ import 'package:flutter/material.dart';
 import '../../content/assessment.dart';
 import '../../theme.dart';
 import '../../widgets/logo.dart';
-import '../placeholder_screen.dart';
+import '../services/nearby_services_screen.dart';
+import 'assessment_form_screen.dart';
 import 'assessment_widgets.dart';
 
 /// Page 16: the four risk levels, with the user's result highlighted.
 class ResultScreen extends StatelessWidget {
-  const ResultScreen({super.key, required this.level, this.onContinue});
+  const ResultScreen({
+    super.key,
+    required this.level,
+    this.userId,
+    this.onContinue,
+  });
 
   final RiskLevel level;
+
+  /// Set when the assessment can be retaken from here, i.e. from the Menu.
+  final int? userId;
 
   /// Set during onboarding, where the result leads on into the app instead
   /// of back to the questionnaire.
@@ -22,7 +31,6 @@ class ResultScreen extends StatelessWidget {
       body: Column(
         children: [
           const LogoHeader(),
-          const SizedBox(height: 12),
           AssessmentTitle(
             title: 'PMOS RISK\nASSESSMENT',
             subtitle: 'EMERGENCY SIGNS',
@@ -58,16 +66,28 @@ class ResultScreen extends StatelessWidget {
                       fontSize: 19,
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                            body: PlaceholderScreen(
-                              title: 'Nearby Health Services',
-                              onBack: () => Navigator.of(context).pop(),
-                            ),
-                          ),
+                          builder: (_) => const NearbyServicesScreen(),
                         ),
                       ),
                     ),
                   ),
+                  if (userId != null) ...[
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: WhitePillButton(
+                        label: 'Retake Assessment',
+                        fontSize: 19,
+                        // Backing out of the retake returns to this result.
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                AssessmentFormScreen(userId: userId!),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   if (onContinue != null) ...[
                     const SizedBox(height: 12),
                     Padding(
